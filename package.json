@@ -1,0 +1,31 @@
+{
+  "name": "truffle-contract-size",
+  "version": "1.0.0",
+  "description": "Displays the size of a truffle contracts in kilobytes",
+  "main": "src/index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "solidity",
+    "truffle",
+    "size",
+    "plugin",
+    "contract",
+    "buidl"
+  ],
+  "author": "tech@io.builders",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "cli-table": "^0.3.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-standard": "^13.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0"
+  }
+}
