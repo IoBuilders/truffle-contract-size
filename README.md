@@ -1,5 +1,7 @@
 # truffle-contract-size
 
+[![npm](https://img.shields.io/npm/v/truffle-contract-size.svg)](https://www.npmjs.com/package/truffle-contract-size)
+
 This [Truffle](https://www.trufflesuite.com/docs/truffle/overview) plugin displays the contract size of all or a selection of your smart contracts in kilobytes.
 
 ## Installation
