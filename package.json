@@ -1,6 +1,6 @@
 {
   "name": "truffle-contract-size",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Displays the size of a truffle contracts in kilobytes",
   "main": "src/index.js",
   "scripts": {
@@ -26,7 +26,8 @@
   },
   "homepage": "https://github.com/IoBuilders/truffle-contract-size#readme",
   "dependencies": {
-    "cli-table": "^0.3.1"
+    "cli-table": "^0.3.1",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "eslint": "^6.1.0",
