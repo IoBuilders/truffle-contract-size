@@ -39,13 +39,13 @@ truffle run contract-size --contracts ExampleContract1 ExampleContract2
 
 ### Check maximum contract sizes
 
-The plugin can be used to check that the smart contracts aren't bigger than the allowed maximum contract size of the Ethereum Mainnet (24 kb). For example this can be used, to make a CI/CD pipeline fail, if a contract is bigger than allowed.
+The plugin can be used to check that the smart contracts aren't bigger than the allowed maximum contract size of the Ethereum Mainnet (24 KiB = 24576 bytes). For example this can be used, to make a CI/CD pipeline fail, if a contract is bigger than allowed.
 
 ```bash
 truffle run contract-size --checkMaxSize
 ```
 
-If another size limit than the default one should be checked, it can be given as argument to the option. For example to set the maximum to 48 kb the following command can be used:
+If another size limit than the default one should be checked, it can be given as argument to the option. For example to set the maximum to 48 KiB the following command can be used:
 
 ```bash
 truffle run contract-size --checkMaxSize 48
