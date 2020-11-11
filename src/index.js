@@ -7,7 +7,8 @@ const readDir = util.promisify(fs.readdir)
 const Table = require('cli-table')
 const yargs = require('yargs')
 
-const DEFAULT_MAX_CONTRACT_SIZE_IN_KB = 24
+// 1 KiB = 1.024 bytes
+const DEFAULT_MAX_CONTRACT_SIZE_IN_KIB = 24
 
 /**
  * Outputs the size of a given smart contract
@@ -43,7 +44,7 @@ module.exports = async (config, done) => {
       done(`Error: deployedBytecode not found in ${contract.file} (it is not a contract json file)`)
     }
 
-    const byteCodeSize = computeByteCodeSizeInKb(contractFile.deployedBytecode)
+    const byteCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
 
     table.push([
       contract.name,
@@ -56,11 +57,11 @@ module.exports = async (config, done) => {
   console.log(table.toString())
 
   if (checkMaxSize) {
-    const maxSize = checkMaxSize === true ? DEFAULT_MAX_CONTRACT_SIZE_IN_KB : checkMaxSize
+    const maxSize = checkMaxSize === true ? DEFAULT_MAX_CONTRACT_SIZE_IN_KIB : checkMaxSize
 
     table.forEach(row => {
       if (Number.parseFloat(row[1]) > maxSize) {
-        done(`Contract ${row[0]} is bigger than ${maxSize} kb`)
+        done(`Contract ${row[0]} is bigger than ${maxSize} KiB`)
       }
     })
   }
@@ -70,7 +71,7 @@ module.exports = async (config, done) => {
 
 function configureArgumentParsing () {
   yargs.option('contracts', { describe: 'Only display certain contracts', type: 'array' })
-  yargs.option('checkMaxSize', { describe: 'Returns an error exit code if a contract is bigger than the optional size in kb (default: 24). Must be an integer value' })
+  yargs.option('checkMaxSize', { describe: 'Returns an error exit code if a contract is bigger than the optional size in KiB (default: 24). Must be an integer value' })
   yargs.option('ignoreMocks', { describe: 'Ignores all contracts which names end with "Mock"', type: 'boolean' })
 
   // disable version parameter
@@ -88,15 +89,15 @@ function isValidCheckMaxSize (checkMaxSize) {
   return checkMaxSize === true || !Number.isNaN(checkMaxSize)
 }
 
-function computeByteCodeSizeInKb (byteCode) {
+function computeByteCodeSizeInKiB (byteCode) {
   // -2 to remove 0x from the beginning of the string
   // /2 because one byte consists of two hexadecimal values
-  // /1024 to convert to size from byte to kilo byte
+  // /1024 to convert to size from byte to kibibytes
   return (byteCode.length - 2) / 2 / 1024
 }
 
 function formatByteCodeSize (byteCodeSize) {
-  return `${byteCodeSize.toFixed(2)} kb`
+  return `${byteCodeSize.toFixed(2)} KiB`
 }
 
 async function checkFile (filePath, done) {
