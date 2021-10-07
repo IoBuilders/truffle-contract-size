@@ -21,7 +21,7 @@ module.exports = async (config, done) => {
   yargs.parse(process.argv.slice(3))
 
   const contractNames = yargs.argv.contracts
-  const { checkMaxSize, ignoreMocks } = yargs.argv
+  const { checkMaxSize, ignoreMocks, sizeInBytes } = yargs.argv
 
   if (!isValidCheckMaxSize(checkMaxSize)) {
     done(`--checkMaxSize: invalid value ${checkMaxSize}`)
@@ -44,11 +44,13 @@ module.exports = async (config, done) => {
       done(`Error: deployedBytecode not found in ${contract.file} (it is not a contract json file)`)
     }
 
-    const byteCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
+    const byteCodeSize = sizeInBytes
+      ? computeByteCodeSizeInBytes(contractFile.deployedBytecode)
+      : computeByteCodeSizeInKiB(contractFile.deployedBytecode)
 
     table.push([
       contract.name,
-      formatByteCodeSize(byteCodeSize)
+      formatByteCodeSize(byteCodeSize, sizeInBytes)
     ])
   })
 
@@ -73,6 +75,7 @@ function configureArgumentParsing () {
   yargs.option('contracts', { describe: 'Only display certain contracts', type: 'array' })
   yargs.option('checkMaxSize', { describe: 'Returns an error exit code if a contract is bigger than the optional size in KiB (default: 24). Must be an integer value' })
   yargs.option('ignoreMocks', { describe: 'Ignores all contracts which names end with "Mock"', type: 'boolean' })
+  yargs.option('sizeInBytes', { describe: 'Show contract size in Bytes', type: 'boolean' })
 
   // disable version parameter
   yargs.version(false)
@@ -89,15 +92,19 @@ function isValidCheckMaxSize (checkMaxSize) {
   return checkMaxSize === true || !Number.isNaN(checkMaxSize)
 }
 
-function computeByteCodeSizeInKiB (byteCode) {
+function computeByteCodeSizeInBytes (byteCode) {
   // -2 to remove 0x from the beginning of the string
   // /2 because one byte consists of two hexadecimal values
-  // /1024 to convert to size from byte to kibibytes
-  return (byteCode.length - 2) / 2 / 1024
+  return (byteCode.length - 2) / 2
 }
 
-function formatByteCodeSize (byteCodeSize) {
-  return `${byteCodeSize.toFixed(2)} KiB`
+function computeByteCodeSizeInKiB (byteCode) {
+  // /1024 to convert to size from byte to kibibytes
+  return computeByteCodeSizeInBytes(byteCode) / 1024
+}
+
+function formatByteCodeSize (byteCodeSize, sizeInBytes) {
+  return `${sizeInBytes ? byteCodeSize : byteCodeSize.toFixed(2)} ${sizeInBytes ? "bytes" : "KiB"}`
 }
 
 async function checkFile (filePath, done) {
