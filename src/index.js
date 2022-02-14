@@ -21,7 +21,7 @@ module.exports = async (config, done) => {
   yargs.parse(process.argv.slice(3))
 
   const contractNames = yargs.argv.contracts
-  const { checkMaxSize, ignoreMocks } = yargs.argv
+  const { checkMaxSize, ignoreMocks, showTotal } = yargs.argv
 
   if (!isValidCheckMaxSize(checkMaxSize)) {
     done(`--checkMaxSize: invalid value ${checkMaxSize}`)
@@ -35,6 +35,8 @@ module.exports = async (config, done) => {
   // array of objects of {file: path to file, name: name of the contract}
   const contracts = await getContracts(config, contractNames, ignoreMocks, done)
 
+  let total = 0
+
   const contractPromises = contracts.map(async (contract) => {
     await checkFile(contract.file, done)
 
@@ -43,6 +45,7 @@ module.exports = async (config, done) => {
     if (!('deployedBytecode' in contractFile)) {
       done(`Error: deployedBytecode not found in ${contract.file} (it is not a contract json file)`)
     }
+    total += computeByteCodeSizeInKiB(contractFile.deployedBytecode)
 
     const byteCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
 
@@ -53,6 +56,18 @@ module.exports = async (config, done) => {
   })
 
   await Promise.all(contractPromises)
+
+  if (showTotal) {
+    table.push([
+      '-',
+      '-'
+    ])
+
+    table.push([
+      'Total',
+      formatByteCodeSize(total)
+    ])
+  }
 
   console.log(table.toString())
 
