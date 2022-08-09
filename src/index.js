@@ -9,7 +9,7 @@ const yargs = require('yargs')
 
 // 1 KiB = 1.024 bytes
 const DEFAULT_MAX_CONTRACT_SIZE_IN_KIB = 24
-const VALUE_BYTES = 1024;
+const VALUE_BYTES = 1024
 
 /**
  * Outputs the size of a given smart contract
@@ -23,22 +23,21 @@ module.exports = async (config, done) => {
 
   const contractNames = yargs.argv.contracts
   const { checkMaxSize, ignoreMocks, sizeInBytes } = yargs.argv
- 
 
   if (!isValidCheckMaxSize(checkMaxSize)) {
     done(`--checkMaxSize: invalid value ${checkMaxSize}`)
   }
 
   const table = new Table({
-    head: ['Contract'.white.bold, {content:'Size'.white.bold,hAlign:'right'}],
-    colWidths: [70, sizeInBytes ? 13 : 12]  
+    head: ['Contract'.white.bold, { content: 'Size'.white.bold, hAlign: 'right' }],
+    colWidths: [70, sizeInBytes ? 13 : 12]
   })
 
   // array of objects of {file: path to file, name: name of the contract}
   const contracts = await getContracts(config, contractNames, ignoreMocks, done)
-  let totalKib = 0;
+  let totalKib = 0
 
-  if (contracts.length == 0) return done(`There are no compiled contracts to calculate the size.`);    
+  if (contracts.length === 0) return done('There are no compiled contracts to calculate the size.')
 
   const contractPromises = contracts.map(async (contract) => {
     await checkFile(contract.file, done)
@@ -50,19 +49,19 @@ module.exports = async (config, done) => {
     }
 
     const kibCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
-    totalKib += kibCodeSize;
+    totalKib += kibCodeSize
 
     table.push([
       contract.name,
-      sizeInBytes ? {content:formatByteCodeSize(convertToByte(kibCodeSize)),hAlign:'right'} : {content:formatKiBCodeSize(kibCodeSize),hAlign:'right'} 
+      sizeInBytes ? { content: formatByteCodeSize(convertToByte(kibCodeSize)), hAlign: 'right' } : { content: formatKiBCodeSize(kibCodeSize), hAlign: 'right' }
     ])
-  }) 
+  })
 
   await Promise.all(contractPromises)
 
   table.push([
-    "Total".white.bold,
-    sizeInBytes ?  {content:formatByteCodeSize(convertToByte(totalKib)).white.bold,hAlign:'right'} : {content:formatKiBCodeSize(totalKib).white.bold,hAlign:'right'}
+    'Total'.white.bold,
+    sizeInBytes ? { content: formatByteCodeSize(convertToByte(totalKib)).white.bold, hAlign: 'right' } : { content: formatKiBCodeSize(totalKib).white.bold, hAlign: 'right' }
   ])
 
   console.log(table.toString())
@@ -78,7 +77,6 @@ module.exports = async (config, done) => {
   }
 
   done()
-
 }
 
 function configureArgumentParsing () {
@@ -110,7 +108,7 @@ function computeByteCodeSizeInKiB (byteCode) {
 }
 
 function convertToByte (valueKib) {
-  return valueKib * VALUE_BYTES;
+  return valueKib * VALUE_BYTES
 }
 
 function formatKiBCodeSize (kibteCodeSize) {
