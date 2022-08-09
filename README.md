@@ -60,3 +60,11 @@ Mock contracts are used to improve the testing of smart contracts. As they are o
 ```bash
 truffle run contract-size --ignoreMocks
 ```
+
+### Show in Bytes
+
+Shows the size of the contracts in Bytes, by default the size is shown in Kib.
+
+```bash
+truffle run contract-size --sizeInBytes
+```
