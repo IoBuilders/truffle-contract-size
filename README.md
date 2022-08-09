@@ -60,3 +60,23 @@ Mock contracts are used to improve the testing of smart contracts. As they are o
 ```bash
 truffle run contract-size --ignoreMocks
 ```
+
+### Sort
+
+The contracts can be sorter by type (name or size) and order (asc or desc).
+
+```bash
+truffle run contract-size --sort name asc
+```
+
+If no arguments are specified, the default order is by name and ascending order.
+
+If one or all arguments are not valids, an warning message will be displayed.
+
+### Disambiguate paths
+
+The contracts name displayed can contain their relative path.
+
+```bash
+truffle run contract-size --disambiguatePaths
+```

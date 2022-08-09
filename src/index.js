@@ -1,5 +1,6 @@
 const fs = require('fs')
 const util = require('util')
+const lodash = require('lodash')
 
 const lstat = util.promisify(fs.lstat)
 const readDir = util.promisify(fs.readdir)
@@ -21,16 +22,14 @@ module.exports = async (config, done) => {
   yargs.parse(process.argv.slice(3))
 
   const contractNames = yargs.argv.contracts
-  const { checkMaxSize, ignoreMocks } = yargs.argv
+  const sortOptions = yargs.argv.sort
+  const { checkMaxSize, ignoreMocks, disambiguatePaths } = yargs.argv
 
   if (!isValidCheckMaxSize(checkMaxSize)) {
     done(`--checkMaxSize: invalid value ${checkMaxSize}`)
   }
 
-  const table = new Table({
-    head: ['Contract'.white.bold, 'Size'.white.bold],
-    colWidths: [70, 10]
-  })
+  let tableData = []
 
   // array of objects of {file: path to file, name: name of the contract}
   const contracts = await getContracts(config, contractNames, ignoreMocks, done)
@@ -46,13 +45,21 @@ module.exports = async (config, done) => {
 
     const byteCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
 
-    table.push([
-      contract.name,
-      formatByteCodeSize(byteCodeSize)
-    ])
+    tableData.push({
+      name: disambiguatePaths ? contract.relativeName : contract.name,
+      size: byteCodeSize,
+      formatSize: formatByteCodeSize(byteCodeSize)
+    })
   })
 
   await Promise.all(contractPromises)
+
+  // Sort tableData
+  if (sortOptions && sortOptions !== []) {
+    tableData = orderTable({ sortOptions, tableData, done })
+  }
+
+  const table = drawTable(tableData)
 
   console.log(table.toString())
 
@@ -69,10 +76,55 @@ module.exports = async (config, done) => {
   done()
 }
 
+function drawTable (data) {
+  const table = new Table({
+    head: ['Contract'.white.bold, 'Size'.white.bold],
+    colWidths: [70, 10]
+  })
+
+  data.forEach(row => {
+    const { name, formatSize } = row
+    table.push([
+      name,
+      formatSize
+    ])
+  })
+
+  return table
+}
+
+function orderTable ({ sortOptions, tableData, done }) {
+  const type = sortOptions[0]
+  const order = sortOptions[1]
+
+  if (!type && !order) {
+    done('Warning: sort default by name and asc.')
+    tableData = lodash.orderBy(tableData, 'name', 'asc') // Default order
+    return tableData
+  }
+
+  if (type !== 'name' && type !== 'size' && (order === 'asc' || order === 'desc')) {
+    done('Warning: invalid value sort (valid values name or size).')
+    tableData = lodash.orderBy(tableData, 'name', order)
+    return tableData
+  }
+
+  if (order !== 'asc' && order !== 'desc' && (type !== 'name' || type !== 'size')) {
+    done('Warning: invalid value order (valid values asc or desc).')
+    tableData = lodash.orderBy(tableData, type, 'asc')
+    return tableData
+  }
+
+  tableData = lodash.orderBy(tableData, type, order)
+  return tableData
+}
+
 function configureArgumentParsing () {
   yargs.option('contracts', { describe: 'Only display certain contracts', type: 'array' })
   yargs.option('checkMaxSize', { describe: 'Returns an error exit code if a contract is bigger than the optional size in KiB (default: 24). Must be an integer value' })
   yargs.option('ignoreMocks', { describe: 'Ignores all contracts which names end with "Mock"', type: 'boolean' })
+  yargs.option('sort', { describe: 'Sort results table by name or size and order asc or desc (default by name and asc). Size options: name or size. Order options: asc or desc', type: 'array' })
+  yargs.option('disambiguatePaths', { describe: 'Display the full path of contracts in table', type: 'boolean' })
 
   // disable version parameter
   yargs.version(false)
@@ -115,7 +167,11 @@ async function checkFile (filePath, done) {
 }
 
 async function getContracts (config, contractNames, ignoreMocks, done) {
-  const contractsBuildDirectory = config.contracts_build_directory
+  const {
+    contracts_build_directory: contractsBuildDirectory,
+    working_directory: workingDirectory,
+    contracts_directory: contractsDirectory
+  } = config
 
   if (contractNames === undefined || contractNames.length === 0) {
     contractNames = await getAllContractNames(contractsBuildDirectory, ignoreMocks, done)
@@ -124,7 +180,8 @@ async function getContracts (config, contractNames, ignoreMocks, done) {
   return contractNames.map(contractName => {
     return {
       file: `${contractsBuildDirectory}/${contractName}.json`,
-      name: contractName
+      name: contractName,
+      relativeName: `${contractsDirectory.split(workingDirectory)[1]}/${contractName}.sol`
     }
   })
 }
