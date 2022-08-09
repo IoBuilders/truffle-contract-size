@@ -30,8 +30,8 @@ module.exports = async (config, done) => {
   }
 
   const table = new Table({
-    head: ['Contract'.white.bold, sizeInBytes ? 'Size Bytes'.white.bold : 'Size KiB'.white.bold],
-    colWidths: [70, sizeInBytes ? 18 : 12]
+    head: ['Contract'.white.bold, {content:'Size'.white.bold,hAlign:'right'}],
+    colWidths: [70, sizeInBytes ? 13 : 12]  
   })
 
   // array of objects of {file: path to file, name: name of the contract}
@@ -54,7 +54,7 @@ module.exports = async (config, done) => {
 
     table.push([
       contract.name,
-      sizeInBytes ? formatByteCodeSize(convertToByte(kibCodeSize)) : formatKiBCodeSize(kibCodeSize) 
+      sizeInBytes ? {content:formatByteCodeSize(convertToByte(kibCodeSize)),hAlign:'right'} : {content:formatKiBCodeSize(kibCodeSize),hAlign:'right'} 
     ])
   }) 
 
@@ -62,7 +62,7 @@ module.exports = async (config, done) => {
 
   table.push([
     "Total".white.bold,
-    sizeInBytes ?  formatByteCodeSize(convertToByte(totalKib)).white.bold : formatKiBCodeSize(totalKib).white.bold   
+    sizeInBytes ?  {content:formatByteCodeSize(convertToByte(totalKib)).white.bold,hAlign:'right'} : {content:formatKiBCodeSize(totalKib).white.bold,hAlign:'right'}
   ])
 
   console.log(table.toString())
@@ -118,7 +118,7 @@ function formatKiBCodeSize (kibteCodeSize) {
 }
 
 function formatByteCodeSize (byteCodeSize) {
-  return `${byteCodeSize.toFixed(2)} Bytes`
+  return `${byteCodeSize} Bytes`
 }
 
 async function checkFile (filePath, done) {
