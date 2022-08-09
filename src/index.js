@@ -1,7 +1,6 @@
 const fs = require('fs')
 const util = require('util')
-const exec = util.promisify(require('child_process').exec);
-
+const exec = util.promisify(require('child_process').exec)
 
 const lstat = util.promisify(fs.lstat)
 const readDir = util.promisify(fs.readdir)
@@ -26,12 +25,12 @@ module.exports = async (config, done) => {
   const contractNamesExcludes = yargs.argv.except
   const { checkMaxSize, ignoreMocks, runOnCompile } = yargs.argv
 
-  if ( runOnCompile ) {
+  if (runOnCompile) {
     try {
-      const { stdout } = await exec('truffle compile');
-      console.log(stdout);
+      const { stdout } = await exec('truffle compile')
+      console.log(stdout)
     } catch (e) {
-      done(e.message);
+      done(e.message)
     }
   }
 
@@ -162,7 +161,7 @@ async function getAllContractNames (contractsBuildDirectory, ignoreMocks, contra
     }
 
     if (contractNamesExcludes !== undefined && contractNamesExcludes.length > 0) {
-      return !contractNamesExcludes.some(exclude => file.slice(0, -5)===exclude || file===exclude)
+      return !contractNamesExcludes.some(exclude => file.slice(0, -5) === exclude || file === exclude)
     }
 
     return true
