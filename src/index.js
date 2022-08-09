@@ -4,11 +4,12 @@ const util = require('util')
 const lstat = util.promisify(fs.lstat)
 const readDir = util.promisify(fs.readdir)
 
-const Table = require('cli-table')
+const Table = require('cli-table3')
 const yargs = require('yargs')
 
 // 1 KiB = 1.024 bytes
 const DEFAULT_MAX_CONTRACT_SIZE_IN_KIB = 24
+const VALUE_BYTES = 1024;
 
 /**
  * Outputs the size of a given smart contract
@@ -21,19 +22,23 @@ module.exports = async (config, done) => {
   yargs.parse(process.argv.slice(3))
 
   const contractNames = yargs.argv.contracts
-  const { checkMaxSize, ignoreMocks } = yargs.argv
+  const { checkMaxSize, ignoreMocks, sizeInBytes } = yargs.argv
+ 
 
   if (!isValidCheckMaxSize(checkMaxSize)) {
     done(`--checkMaxSize: invalid value ${checkMaxSize}`)
   }
 
   const table = new Table({
-    head: ['Contract'.white.bold, 'Size'.white.bold],
-    colWidths: [70, 10]
+    head: ['Contract'.white.bold, sizeInBytes ? 'Size Bytes'.white.bold : 'Size KiB'.white.bold],
+    colWidths: [70, sizeInBytes ? 18 : 12]
   })
 
   // array of objects of {file: path to file, name: name of the contract}
   const contracts = await getContracts(config, contractNames, ignoreMocks, done)
+  let totalKib = 0;
+
+  if (contracts.length == 0) return done(`There are no compiled contracts to calculate the size.`);    
 
   const contractPromises = contracts.map(async (contract) => {
     await checkFile(contract.file, done)
@@ -44,15 +49,21 @@ module.exports = async (config, done) => {
       done(`Error: deployedBytecode not found in ${contract.file} (it is not a contract json file)`)
     }
 
-    const byteCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
+    const kibCodeSize = computeByteCodeSizeInKiB(contractFile.deployedBytecode)
+    totalKib += kibCodeSize;
 
     table.push([
       contract.name,
-      formatByteCodeSize(byteCodeSize)
+      sizeInBytes ? formatByteCodeSize(convertToByte(kibCodeSize)) : formatKiBCodeSize(kibCodeSize) 
     ])
-  })
+  }) 
 
   await Promise.all(contractPromises)
+
+  table.push([
+    "Total".white.bold,
+    sizeInBytes ?  formatByteCodeSize(convertToByte(totalKib)).white.bold : formatKiBCodeSize(totalKib).white.bold   
+  ])
 
   console.log(table.toString())
 
@@ -67,12 +78,14 @@ module.exports = async (config, done) => {
   }
 
   done()
+
 }
 
 function configureArgumentParsing () {
   yargs.option('contracts', { describe: 'Only display certain contracts', type: 'array' })
   yargs.option('checkMaxSize', { describe: 'Returns an error exit code if a contract is bigger than the optional size in KiB (default: 24). Must be an integer value' })
   yargs.option('ignoreMocks', { describe: 'Ignores all contracts which names end with "Mock"', type: 'boolean' })
+  yargs.option('sizeInBytes', { describe: 'Shows the size of the contracts in Bytes', type: 'boolean' })
 
   // disable version parameter
   yargs.version(false)
@@ -96,8 +109,16 @@ function computeByteCodeSizeInKiB (byteCode) {
   return (byteCode.length - 2) / 2 / 1024
 }
 
+function convertToByte (valueKib) {
+  return valueKib * VALUE_BYTES;
+}
+
+function formatKiBCodeSize (kibteCodeSize) {
+  return `${kibteCodeSize.toFixed(2)} KiB`
+}
+
 function formatByteCodeSize (byteCodeSize) {
-  return `${byteCodeSize.toFixed(2)} KiB`
+  return `${byteCodeSize.toFixed(2)} Bytes`
 }
 
 async function checkFile (filePath, done) {
