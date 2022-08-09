@@ -13,14 +13,13 @@ npm install truffle-contract-size
 ```
 
 2. Add the plugin to your `truffle.js` or `truffle-config.js` file
-```js
-    module.exports = {
-      /* ... rest of truffle-config */
 
-      plugins: [
-        'truffle-contract-size'
-      ]
-    }
+```js
+module.exports = {
+  /* ... rest of truffle-config */
+
+  plugins: ["truffle-contract-size"],
+};
 ```
 
 ## Usage
@@ -59,4 +58,20 @@ Mock contracts are used to improve the testing of smart contracts. As they are o
 
 ```bash
 truffle run contract-size --ignoreMocks
+```
+
+### Except
+
+Excludes the contracts which matched with names provided. It is possible to specify only the name or indicate the full name with the extension .json.
+
+```bash
+truffle run contract-size --except ExampleContract1 ExampleContract2.json
+```
+
+### RunOnCompile
+
+Whether to compile contracts before display contract sizes
+
+```bash
+truffle run contract-size --runOnCompile
 ```

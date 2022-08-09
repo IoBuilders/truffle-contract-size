@@ -1,5 +1,6 @@
 const fs = require('fs')
 const util = require('util')
+const exec = util.promisify(require('child_process').exec)
 
 const lstat = util.promisify(fs.lstat)
 const readDir = util.promisify(fs.readdir)
@@ -21,7 +22,17 @@ module.exports = async (config, done) => {
   yargs.parse(process.argv.slice(3))
 
   const contractNames = yargs.argv.contracts
-  const { checkMaxSize, ignoreMocks } = yargs.argv
+  const contractNamesExcludes = yargs.argv.except
+  const { checkMaxSize, ignoreMocks, runOnCompile } = yargs.argv
+
+  if (runOnCompile) {
+    try {
+      const { stdout } = await exec('truffle compile')
+      console.log(stdout)
+    } catch (e) {
+      done(e.message)
+    }
+  }
 
   if (!isValidCheckMaxSize(checkMaxSize)) {
     done(`--checkMaxSize: invalid value ${checkMaxSize}`)
@@ -33,7 +44,7 @@ module.exports = async (config, done) => {
   })
 
   // array of objects of {file: path to file, name: name of the contract}
-  const contracts = await getContracts(config, contractNames, ignoreMocks, done)
+  const contracts = await getContracts(config, contractNames, ignoreMocks, contractNamesExcludes, done)
 
   const contractPromises = contracts.map(async (contract) => {
     await checkFile(contract.file, done)
@@ -73,6 +84,8 @@ function configureArgumentParsing () {
   yargs.option('contracts', { describe: 'Only display certain contracts', type: 'array' })
   yargs.option('checkMaxSize', { describe: 'Returns an error exit code if a contract is bigger than the optional size in KiB (default: 24). Must be an integer value' })
   yargs.option('ignoreMocks', { describe: 'Ignores all contracts which names end with "Mock"', type: 'boolean' })
+  yargs.option('except', { describe: 'Array of String matchers used to exclude contracts', type: 'array' })
+  yargs.option('runOnCompile', { describe: 'whether to compile contracts before display constract sizes', type: 'boolean' })
 
   // disable version parameter
   yargs.version(false)
@@ -114,11 +127,11 @@ async function checkFile (filePath, done) {
   }
 }
 
-async function getContracts (config, contractNames, ignoreMocks, done) {
+async function getContracts (config, contractNames, ignoreMocks, contractNamesExcludes, done) {
   const contractsBuildDirectory = config.contracts_build_directory
 
   if (contractNames === undefined || contractNames.length === 0) {
-    contractNames = await getAllContractNames(contractsBuildDirectory, ignoreMocks, done)
+    contractNames = await getAllContractNames(contractsBuildDirectory, ignoreMocks, contractNamesExcludes, done)
   }
 
   return contractNames.map(contractName => {
@@ -129,7 +142,7 @@ async function getContracts (config, contractNames, ignoreMocks, done) {
   })
 }
 
-async function getAllContractNames (contractsBuildDirectory, ignoreMocks, done) {
+async function getAllContractNames (contractsBuildDirectory, ignoreMocks, contractNamesExcludes, done) {
   let files
 
   try {
@@ -145,6 +158,10 @@ async function getAllContractNames (contractsBuildDirectory, ignoreMocks, done) 
 
     if (ignoreMocks && file.endsWith('Mock.json')) {
       return false
+    }
+
+    if (contractNamesExcludes !== undefined && contractNamesExcludes.length > 0) {
+      return !contractNamesExcludes.some(exclude => file.slice(0, -5) === exclude || file === exclude)
     }
 
     return true
