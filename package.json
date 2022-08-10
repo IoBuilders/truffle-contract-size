@@ -27,8 +27,9 @@
   "homepage": "https://github.com/IoBuilders/truffle-contract-size#readme",
   "dependencies": {
     "cli-table": "^0.3.1",
-    "yargs": "^15.3.1",
-    "lodash": "^4.17.21"
+    "colors": "^1.4.0",
+    "lodash": "^4.17.21",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "eslint": "^6.1.0",

@@ -7,6 +7,7 @@ const readDir = util.promisify(fs.readdir)
 
 const Table = require('cli-table')
 const yargs = require('yargs')
+const colors = require('colors')
 
 // 1 KiB = 1.024 bytes
 const DEFAULT_MAX_CONTRACT_SIZE_IN_KIB = 24
@@ -56,12 +57,10 @@ module.exports = async (config, done) => {
 
   // Sort tableData
   if (sortOptions && sortOptions !== []) {
-    tableData = orderTable({ sortOptions, tableData, done })
+    tableData = orderTable({ sortOptions, tableData })
   }
 
   const table = drawTable(tableData)
-
-  console.log(table.toString())
 
   if (checkMaxSize) {
     const maxSize = checkMaxSize === true ? DEFAULT_MAX_CONTRACT_SIZE_IN_KIB : checkMaxSize
@@ -71,7 +70,27 @@ module.exports = async (config, done) => {
         done(`Contract ${row[0]} is bigger than ${maxSize} KiB`)
       }
     })
+
+    table.map(row => {
+      const size = Number.parseFloat(row[1])
+      const percentage80 = Number.parseFloat(maxSize * 0.8).toFixed(2)
+
+      if (size <= percentage80) {
+        row[0] = row[0].green
+        row[1] = row[1].green
+      }
+      if (size > percentage80 && size <= maxSize) {
+        row[0] = row[0].yellow
+        row[1] = row[1].yellow
+      }
+      if (size > maxSize) {
+        row[0] = row[0].red
+        row[1] = row[1].red
+      }
+    })
   }
+
+  console.log(table.toString())
 
   done()
 }
@@ -93,24 +112,24 @@ function drawTable (data) {
   return table
 }
 
-function orderTable ({ sortOptions, tableData, done }) {
+function orderTable ({ sortOptions, tableData }) {
   const type = sortOptions[0]
   const order = sortOptions[1]
 
   if (!type && !order) {
-    done('Warning: sort default by name and asc.')
+    console.log(colors.yellow('WARNING: type and order options have not been specified. Sorted by name and asc.'))
     tableData = lodash.orderBy(tableData, 'name', 'asc') // Default order
     return tableData
   }
 
   if (type !== 'name' && type !== 'size' && (order === 'asc' || order === 'desc')) {
-    done('Warning: invalid value sort (valid values name or size).')
+    console.log(colors.yellow('WARNING: type option has not been specified. Sorted by name.'))
     tableData = lodash.orderBy(tableData, 'name', order)
     return tableData
   }
 
   if (order !== 'asc' && order !== 'desc' && (type !== 'name' || type !== 'size')) {
-    done('Warning: invalid value order (valid values asc or desc).')
+    console.log(colors.yellow('WARNING: order option has not been specified. Sorted by asc.'))
     tableData = lodash.orderBy(tableData, type, 'asc')
     return tableData
   }
