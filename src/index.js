@@ -119,8 +119,8 @@ function formatByteCodeSize (byteCodeSize) {
   return byteCodeSize.toFixed(0)
 }
 
-function formatWithThousandSeparator (value){
-  return (typeof value === 'number' ? value.toString() : value).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
+function formatWithThousandSeparator (value) {
+  return (typeof value === 'number' ? value.toString() : value).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ',')
 }
 
 async function checkFile (filePath, done) {
