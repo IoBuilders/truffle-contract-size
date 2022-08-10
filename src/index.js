@@ -29,7 +29,7 @@ module.exports = async (config, done) => {
   }
 
   const table = new Table({
-    head: ['Contract'.white.bold, { content: 'Size'.white.bold, hAlign: 'right' }],
+    head: ['Contract'.white.bold, sizeInBytes ? { content: 'Size (Bytes)'.white.bold, hAlign: 'right' } : { content: 'Size (KiB)'.white.bold, hAlign: 'right' }],
     colWidths: [70, sizeInBytes ? 13 : 12]
   })
 
@@ -53,7 +53,7 @@ module.exports = async (config, done) => {
 
     table.push([
       contract.name,
-      sizeInBytes ? { content: formatByteCodeSize(convertToByte(kibCodeSize)), hAlign: 'right' } : { content: formatKiBCodeSize(kibCodeSize), hAlign: 'right' }
+      sizeInBytes ? { content: formatWithThousandSeparator(formatByteCodeSize(convertToByte(kibCodeSize))), hAlign: 'right' } : { content: formatWithThousandSeparator(formatKiBCodeSize(kibCodeSize)), hAlign: 'right' }
     ])
   })
 
@@ -61,7 +61,7 @@ module.exports = async (config, done) => {
 
   table.push([
     'Total'.white.bold,
-    sizeInBytes ? { content: formatByteCodeSize(convertToByte(totalKib)).white.bold, hAlign: 'right' } : { content: formatKiBCodeSize(totalKib).white.bold, hAlign: 'right' }
+    sizeInBytes ? { content: formatWithThousandSeparator(formatByteCodeSize(convertToByte(totalKib))).white.bold, hAlign: 'right' } : { content: formatWithThousandSeparator(formatKiBCodeSize(totalKib)).white.bold, hAlign: 'right' }
   ])
 
   console.log(table.toString())
@@ -112,11 +112,15 @@ function convertToByte (valueKib) {
 }
 
 function formatKiBCodeSize (kibteCodeSize) {
-  return `${kibteCodeSize.toFixed(2)} KiB`
+  return kibteCodeSize.toFixed(2)
 }
 
 function formatByteCodeSize (byteCodeSize) {
-  return `${byteCodeSize} Bytes`
+  return byteCodeSize.toFixed(0)
+}
+
+function formatWithThousandSeparator (value){
+  return (typeof value === 'number' ? value.toString() : value).replace(/\B(?<!\.\d*)(?=(\d{3})+(?!\d))/g, ",");
 }
 
 async function checkFile (filePath, done) {
