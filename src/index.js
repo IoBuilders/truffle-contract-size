@@ -30,7 +30,7 @@ module.exports = async (config, done) => {
 
   const table = new Table({
     head: ['Contract'.white.bold, sizeInBytes ? { content: 'Size (Bytes)'.white.bold, hAlign: 'right' } : { content: 'Size (KiB)'.white.bold, hAlign: 'right' }],
-    colWidths: [70, sizeInBytes ? 13 : 12]
+    colWidths: [70, sizeInBytes ? 14 : 12]
   })
 
   // array of objects of {file: path to file, name: name of the contract}
